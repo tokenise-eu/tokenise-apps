@@ -5,6 +5,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 
+	"github.com/tokenise-eu/tokenise-apps/apps/eth/db"
 	"github.com/tokenise-eu/tokenise-apps/apps/eth/token"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -13,8 +14,7 @@ import (
 
 // Listen will start listening on the ethereum blockchain for events
 // emitted by the contract.
-func Listen(contract *token.Token, client *ethclient.Client, c chan string) error {
-
+func Listen(contract *token.Token, client *ethclient.Client, db *db.DB, c chan string) error {
 	watchOpts := bind.WatchOpts{
 		Start:   nil,
 		Context: nil,
@@ -94,14 +94,17 @@ func Listen(contract *token.Token, client *ethclient.Client, c chan string) erro
 			}*/
 			fmt.Println(transfer)
 		case add := <-addChan:
-			/*if err := db.AddUser(add.Hash[:]); err != nil {
+			if err := db.AddUser(add.Addr.String(), add.Hash[:]); err != nil {
 				return err
-			}*/
-			fmt.Println(add)
+			}
 		case update := <-updateChan:
-			fmt.Println(update)
+			if err := db.UpdateUser(update.Addr.String(), update.Hash[:]); err != nil {
+				return err
+			}
 		case remove := <-removeChan:
-			fmt.Println(remove)
+			if err := db.RemoveUser(remove.Addr.String()); err != nil {
+				return err
+			}
 		case <-c:
 			return nil
 		}

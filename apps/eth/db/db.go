@@ -34,10 +34,24 @@ func Connect(user string, pass string) (*DB, error) {
 
 // AddUser is mostly for posterity right now
 // This should ideally be done from Onfido and not from the contract.
-func (db *DB) AddUser(from []byte) error {
-	// Unmarshal first, but this structure will be apparent later
-	doc := bson.D{{"from", from}}
+func (db *DB) AddUser(addr string, info []byte) error {
+	doc := bson.D{{"address", addr}, {"info", info}}
 	res, err := db.DB.Collection("users").InsertOne(context.Background(), doc)
+	fmt.Println(res)
+	return err
+}
+
+func (db *DB) UpdateUser(addr string, info []byte) error {
+	filter := bson.D{{"address", addr}}
+	update := bson.D{{"$set", bson.D{{"info", info}}}}
+	res, err := db.DB.Collection("users").UpdateOne(context.Background(), filter, update)
+	fmt.Println(res)
+	return err
+}
+
+func (db *DB) RemoveUser(addr string) error {
+	filter := bson.D{{"address", addr}}
+	res, err := db.DB.Collection("users").DeleteOne(context.Background(), filter)
 	fmt.Println(res)
 	return err
 }

@@ -7,6 +7,8 @@ import (
 	"os/signal"
 	"strings"
 
+	"github.com/tokenise-eu/tokenise-apps/apps/eth/db"
+
 	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -54,19 +56,19 @@ func main() {
 	var address common.Address
 	var contract *token.Token
 	if *addr == "0x0" {
-		auth, err := bind.NewTransactor(strings.NewReader(key), "")
+		auth, err := bind.NewTransactor(strings.NewReader(key), "Konijn2012")
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			return
 		}
 
-		address, _, contract, err = token.DeployToken(auth, client, "Test", "TST")
+		address, _, contract, err = token.DeployToken(auth, client, "Tst", "TST")
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			return
 		}
 
-		fmt.Printf("Contract deployed at %v on the %v network\n", address.String(), network)
+		fmt.Printf("Contract deployed at %v on %v\n", address.String(), network)
 		if err := migrator.Populate(); err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			return
@@ -79,10 +81,16 @@ func main() {
 		}
 	}
 
+	db, err := db.Connect("admin", "admin")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error starting mongo: %v", err)
+		return
+	}
+
 	// Set up listener
 	var c chan string
 	go func() {
-		if err := listener.Listen(contract, client, c); err != nil {
+		if err := listener.Listen(contract, client, db, c); err != nil {
 			fmt.Fprintf(os.Stderr, "listener error: %v", err)
 			return
 		}
@@ -99,12 +107,7 @@ func main() {
 			// c <- "stop"
 			return
 		case message := <-c:
-			switch message {
-			case "freeze":
-
-			case "lock":
-
-			case "migrate":
+			if message == "migrate" {
 				c <- "stop"
 				if err := migrator.PackUp(); err != nil {
 					fmt.Fprintf(os.Stderr, "migration error during packup: %v", err)
