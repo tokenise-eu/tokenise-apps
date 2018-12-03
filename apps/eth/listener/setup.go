@@ -16,7 +16,7 @@ type Config struct {
 	TokenListenerPort uint
 }
 
-func readBlock() (*big.Int, error) {
+func ReadBlock() (*big.Int, error) {
 	txt, err := ioutil.ReadFile("lastblock.txt")
 	if err != nil {
 		return nil, err
@@ -32,7 +32,7 @@ func readBlock() (*big.Int, error) {
 	return block, nil
 }
 
-func writeBlock(number string) error {
+func WriteBlock(number string) error {
 	file, err := os.Create("lastblock.txt")
 	if err != nil {
 		return err
